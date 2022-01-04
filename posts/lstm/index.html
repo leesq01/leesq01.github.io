@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>李上铨大王</title>
+<meta name="keywords" content="" />
+<meta name="description" content="@[TOC]
+一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1
+为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。
+二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。
+举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2
+假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。
+使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。
+神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：
+   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$">
+<meta name="author" content="">
+<link rel="canonical" href="https://leesq01.github.io./posts/lstm/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.c88963fe2d79462000fd0fb1b3737783c32855d340583e4523343f8735c787f0.css" integrity="sha256-yIlj/i15RiAA/Q&#43;xs3N3g8MoVdNAWD5FIzQ/hzXHh/A=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://leesq01.github.io./favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://leesq01.github.io./favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://leesq01.github.io./favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://leesq01.github.io./apple-touch-icon.png">
+<link rel="mask-icon" href="https://leesq01.github.io./safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.91.2" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="" />
+<meta property="og:description" content="@[TOC]
+一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1
+为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。
+二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。
+举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2
+假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。
+使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。
+神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：
+   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://leesq01.github.io./posts/lstm/" /><meta property="article:section" content="posts" />
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content=""/>
+<meta name="twitter:description" content="@[TOC]
+一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1
+为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。
+二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。
+举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2
+假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。
+使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。
+神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：
+   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://leesq01.github.io./posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://leesq01.github.io./posts/lstm/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "@[TOC]\n一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1\n为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。\n二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。\n举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2\n假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。\n使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。\n神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：\n   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$",
+  "keywords": [
+    
+  ],
+  "articleBody": "@[TOC]\n一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1\n为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。\n二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。\n举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2\n假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。\n使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。\n神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：\n   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$\n$$ S_t = f(U·X_t + W ·S_{t-1}） $$ 注意：为了简单说明问题，偏置都没有包含在公式里面。\n这样，就可以做到的在一个序列中根据前面的输出来影响后面的输出。\n三、长短时记忆神经网络LSTM 3.1 为什么需要LSTM 回到我们的例子： The cat, which already ate …, () full.\n这个例子与之前的例子稍微有一些不同，这里的cat 和()之间已经相隔了较长的一段距离，这时候用RNN来处理这样的长期信息就不太合适。\n因为RNN在反向传播阶段有梯度消失等问题不能处理长依赖问题，这里的梯度消失是由于RNN在计算过程中使用链式法则。\n具体来说，RNN使用覆盖的方式来计算状态：$S_t = f(S_{t-1},x_t)$,这类似于复合函数，根据链式求导的法则，复合函数求导：设$f$ 和 $g$ 为 $x$ 的可导函数，则$(f \\circ g)'(x) = f'(g(x))g'(x)$,这是一种连乘的方式，如果导数小于或大于1，会发生梯度下降以及梯度爆炸。梯度爆炸可以通过剪枝算法解决，但是梯度消失却没办法解决。\n梯度消失可能不太好理解，可以简单理解为RNN中后边输入的数据影响越大，前面的数据的影响小，因此不能处理长期信息。后来，有学者在一篇论文Long Short-Term Memory 4 提出了LSTM，LSTM通过选择性地保留信息，有效地缓解了梯度消失以及梯度下降的问题，可以说LSTM正是为了适合学习长期依赖而产生的。\n3.2 LSTM结构分析 回顾一下RNN的模型构造：\n可以看到，RNN循环网络模型的链式结构非常简单，通常仅含有一个tanh层。\nLSTM模型构造： 而LSTM的链式结构中，循环单元结构不同，里边有四个神经网络层。\n先来解释一下图中符号含义：    符号 含义     黄色矩形 神经网络层   粉色圆 结点操作，比如向量相加   箭头 从一个结点的输出到另外的结点的输入   箭头合并 链接   箭头分叉 内容复制后副本流向不同的位置   LSTM结构（图右）和普通RNN的主要输入输出区别如下所示：        相比RNN只有一个传递状态 $h^t$ , LSTM有两个传输状态,一个 $c^t$ （cell state）， 和一个 $h^t$ (hidden state)。（RNN中的 $h^t$ 对应LSTM中的 $C^t$）     3.3 LSTM背后的核心思想 LSTM的核心思想，LSTM的关键是细胞状态(cell state)，即下图中上边的水平线。cell state像是一条传送带，它贯穿整条链，其中只发生一些小的线性作用。信息流过这条线而不改变是非常容易的。5 改变cell state需要三个门的相互配合。\n如下图所示： LSTM删除或添加信息到cell state，是由被称为门的结构控制的。LSTM中有三个门，“遗忘门” “输入门” 以及“输出门”，用来保护和更新cell的状态。 门是筛选信息的方法，由一个sigmoid网络层和一个点乘操作组成。 如下图： sigmoid层作为激活函数，将输出控制在(0,1)区间内，Sigmoid的函数图形如下： 可以看到，绝大多数的值都是接近0或者接近1的。利用这一个性质，0 表示不允许任何通过，1 表示允许一切通过。\n3.4 LSTM的运行机制 第一步，需要决定从cell state中丢弃什么样的信息，这个由“遗忘门”的sigmoid层决定。根据输入$h_{t-1}$ 和 $x_t$，得到的输出是0和1之间的数。0 代表“完全保留这个值”，1代表“完全丢弃这个值”。\n回到开始的例子，原来的主语是\"cat\"，之后遇到了一个新的主语\"cats\"。这时需要把之前的\"cat\"给忘掉，以便确定接下来是要使用\"were\"，而不是\"was\"。如下图： 第二步，需要决定在cell state里存储什么样的信息。这一步划分为两个部分，一是称为“输入门”的sigmoid层决定哪些数据需要更新。然后，tanh层创建一个新的候选值向量$\\widetilde{C}_t$,这些值能加入state中。第二部分，需要将这两个部分合并以实现对state的更新。\n在例子中，这里对应于把新的\"cats\"加入到\"cell state\"中，以替代需要遗忘的\"cat\"。如下图： 在决定好需要遗忘的以及需要加入的记忆之后，就可以把旧的cell state $C_{t-1}$更新到新的cell state $C_t$。 这一步中，把旧的state $C_{t-1}$ 与$f_t$ 相乘，遗忘先前决定遗忘的东西，之后加上新的记忆信息 $i_t \\ast \\widetilde{C}_t$。这里为了体现对状态值的更新度是有限制的，可以把$i_t$当成一个权重。如下图： 最后，需要决定输出。这个输出将会基于cell state ，这是一个过滤后的值。首先，使用“输出门”的sigmoid层决定输出cell state的哪些部分的。然后，将cell state放入tanh（将数值限制在-1到1），最后将结果与sigmoid门的输出相乘，这样就可以只输出需要的部分。如下图： 3.5 LSTM如何避免梯度下降 上边提到了RNN中的梯度下降以及梯度爆炸问题，是是因为在计算过程中使用链式法则，使用了乘积。而在LSTM中，状态是通过累加的方式来计算，$S_t = \\sum_{\\tau =1}^t \\Delta S_{\\tau}$。这样的计算，就不是复合函数的形式，它的导数也就不是乘积的形式，就不会发生梯度消失的情况。\n四、入门例子 下面给出LSTM的一个入门实例-根据前9年的数据预测后3年的客流6,感谢原作者的代码，完整的代码见GithubYonv1943。这里简单说一下这个代码实例的结果，需要了解更加详细的代码细节可以看看原作者的原文详解。\n考虑有一组某机场1949年~1960年12年共144个月的客流量数据。使用这个数据中的前9年的客流量来预测后3年的客流量，再和实际的数据进行比对，可以看出LSTM的对这类具有时序关系的拟合效果。\n结果图：  数据：机场1949~1960年12年共144个月的客流量数据。数据具有三个维度[客运量，年份，月份]。其中前75%（前9年）的数据作为训练集，后25%(后3年)的数据作为测试集。 纵坐标：标准化处理：变量值与平均数的差除以标准差，给出数值的相对位置。横坐标为月数。 图解释：竖直黑线左边是训练集(前9年)。右边(后3年)红色的是预测数值，蓝色的是实际数值。  可以看到在这个LSTM对这个数据集的拟合效果是比较好的，在这样的实际场景中，可以利用LSTM这样的工具来对客流量做一个预测，以便对客运高峰等情况做好预备方案。\n五、总结  RNN的计算中存在多个偏导数连乘，导致梯度消失或梯度爆炸，难以处理长依赖的信息。 LSTM通过三个选择性地保留信息，可以选择最近的信息或者很久之前的信息。 LSTM更新cell state是采用了线性求和的计算，因此不会出现梯度消失问题，可以处理长期依赖的信息。  六、参考资料   长短期记忆 ↩︎\n 吴恩达深度学习课程 ↩︎\n 一文搞懂RNN（循环神经网络）基础篇 ↩︎\n Long Short-Term Memory ↩︎\n Understanding LSTM Networks ↩︎\n LSTM入门例子：根据前9年的数据预测后3年的客流（PyTorch实现） ↩︎\n   ",
+  "wordCount" : "225",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://leesq01.github.io./posts/lstm/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "李上铨大王",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://leesq01.github.io./favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://leesq01.github.io./" accesskey="h" title="李上铨大王 (Alt + H)">李上铨大王</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title">
+      
+    </h1>
+    <div class="post-meta">
+
+</div>
+  </header> 
+  <div class="post-content"><p>@[TOC]</p>
+<h2 id="一引言">一、引言<a hidden class="anchor" aria-hidden="true" href="#一引言">#</a></h2>
+<h3 id="11-什么是lstm">1.1 什么是LSTM<a hidden class="anchor" aria-hidden="true" href="#11-什么是lstm">#</a></h3>
+<p>首先看看百科的解释。
+长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
+<p>为了更好地理解<a href="https://baike.baidu.com/item/%E9%95%BF%E7%9F%AD%E6%9C%9F%E8%AE%B0%E5%BF%86%E4%BA%BA%E5%B7%A5%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/17541107">长短期记忆网络 - LSTM</a>(下文简称LSTM)，可以先了解<a href="https://baike.baidu.com/item/%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/23199490">循环神经网络-RNN</a>(下文简称RNN)的相关知识，<a href="https://zybuluo.com/hanbingtao/note/541458">这里</a>有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。</p>
+<h2 id="二循环神经网络rnn">二、循环神经网络RNN<a hidden class="anchor" aria-hidden="true" href="#二循环神经网络rnn">#</a></h2>
+<h3 id="21-为什么需要rnn">2.1 为什么需要RNN<a hidden class="anchor" aria-hidden="true" href="#21-为什么需要rnn">#</a></h3>
+<p>人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。</p>
+<p>举个例子：要识别这么一个句子:
+The cat, which already ate cakes, () full.<sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
+<p>假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。</p>
+<p>使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，<strong>前一个输出和后一个输出是完全没有关系的</strong>。</p>
+<p>神经网络的结构如下：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/eccbadc449f47863981117d1fab29f93.png#pic_center" alt="Alt"  />
+
+但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，<strong>即前面的输出和后面的输出是有关系的</strong>。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。
+RNN模型构造：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/17b28b4c7d3960564915d6e413ae3801.png#pic_center" alt="传统RNN模型"  />
+</p>
+<p>RNN神经网络示意图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/20200421163212367.gif#pic_center" alt="RNN模型"  />
+
+蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。
+我们来看看RNN隐藏层里发生了什么,将上图按时间线展开<sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>：</p>
+<p><img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/57fbaf5519ae854708e15b1ced63c2ac.png#pic_center" alt="隐藏层"  />
+</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">符号</th>
+<th style="text-align:center">意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">X</td>
+<td style="text-align:center">一个向量，输入层的值</td>
+</tr>
+<tr>
+<td style="text-align:center">S</td>
+<td style="text-align:center">一个向量，隐藏层的值</td>
+</tr>
+<tr>
+<td style="text-align:center">O</td>
+<td style="text-align:center">一个向量，输出层的值</td>
+</tr>
+<tr>
+<td style="text-align:center">U</td>
+<td style="text-align:center">输入层到隐藏层的权重矩阵</td>
+</tr>
+<tr>
+<td style="text-align:center">V</td>
+<td style="text-align:center">隐藏层到输出层的权重矩阵</td>
+</tr>
+<tr>
+<td style="text-align:center">W</td>
+<td style="text-align:center">隐藏层上一次的值作为这一次输入的权重</td>
+</tr>
+</tbody>
+</table>
+<p>再给出一个更具体的图，给出各层元素的对应关系
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/6b81ecefc930340459172bb5c7145e20.png#pic_center" alt="具体图"  />
+
+现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$  。关键一点是，<strong>$s_t$ 的值不仅仅取决于 $x_t$  ，还取决于 $s_{t-1}$ 。</strong> 我们可以用下面的公式来表示RNN的计算方法：
+用公式表示如下：
+$$
+O_t = g(V·S_t)
+$$</p>
+<p>$$
+S_t = f(U·X_t + W ·S_{t-1}）
+$$
+<em>注意：为了简单说明问题，偏置都没有包含在公式里面。</em></p>
+<p><strong>这样，就可以做到的在一个序列中根据前面的输出来影响后面的输出。</strong></p>
+<h2 id="三长短时记忆神经网络lstm">三、长短时记忆神经网络LSTM<a hidden class="anchor" aria-hidden="true" href="#三长短时记忆神经网络lstm">#</a></h2>
+<h3 id="31-为什么需要lstm">3.1 为什么需要LSTM<a hidden class="anchor" aria-hidden="true" href="#31-为什么需要lstm">#</a></h3>
+<p>回到我们的例子：
+The cat, which already ate &hellip;, () full.</p>
+<p>这个例子与之前的例子稍微有一些不同，这里的cat 和()之间已经相隔了较长的一段距离，这时候用RNN来处理这样的长期信息就不太合适。</p>
+<p>因为RNN在反向传播阶段有<strong>梯度消失</strong>等问题不能处理长依赖问题，这里的梯度消失是由于RNN在计算过程中使用<strong>链式法则</strong>。</p>
+<p>具体来说，RNN使用覆盖的方式来计算状态：$S_t = f(S_{t-1},x_t)$,这类似于复合函数，根据链式求导的法则，复合函数求导：设$f$ 和 $g$ 为 $x$ 的可导函数，则$(f \circ g)'(x) = f'(g(x))g'(x)$,这是一种连乘的方式，如果导数小于或大于1，会发生梯度下降以及梯度爆炸。梯度爆炸可以通过剪枝算法解决，但是梯度消失却没办法解决。</p>
+<p>梯度消失可能不太好理解，可以简单理解为<strong>RNN中后边输入的数据影响越大，前面的数据的影响小，因此不能处理长期信息</strong>。后来，有学者在一篇论文<a href="https://ieeexplore.ieee.org/abstract/document/6795963">Long Short-Term Memory</a> <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup> 提出了LSTM，LSTM通过选择性地保留信息，有效地缓解了梯度消失以及梯度下降的问题，可以说LSTM正是为了适合学习长期依赖而产生的。</p>
+<h3 id="32-lstm结构分析">3.2 LSTM结构分析<a hidden class="anchor" aria-hidden="true" href="#32-lstm结构分析">#</a></h3>
+<p>回顾一下RNN的模型构造：</p>
+<p><img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/17b28b4c7d3960564915d6e413ae3801.png#pic_center" alt="RNN模型构造"  />
+
+可以看到，RNN循环网络模型的链式结构非常简单，通常仅含有一个tanh层。</p>
+<p>LSTM模型构造：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/1af0e82b40973bc175f0970e184c87e8.png#pic_center" alt="LSTM"  />
+
+而LSTM的链式结构中，循环单元结构不同，里边有四个神经网络层。</p>
+<p>先来解释一下图中符号含义：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/0c1696ea18a99ac807c756e969b56aba.png#pic_center" alt="符号含义"  />
+</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">符号</th>
+<th style="text-align:left">含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">黄色矩形</td>
+<td style="text-align:left">神经网络层</td>
+</tr>
+<tr>
+<td style="text-align:center">粉色圆</td>
+<td style="text-align:left">结点操作，比如向量相加</td>
+</tr>
+<tr>
+<td style="text-align:center">箭头</td>
+<td style="text-align:left">从一个结点的输出到另外的结点的输入</td>
+</tr>
+<tr>
+<td style="text-align:center">箭头合并</td>
+<td style="text-align:left">链接</td>
+</tr>
+<tr>
+<td style="text-align:center">箭头分叉</td>
+<td style="text-align:left">内容复制后副本流向不同的位置</td>
+</tr>
+<tr>
+<td style="text-align:center">LSTM结构（图右）和普通RNN的主要输入输出区别如下所示：</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center"><img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/328c2074634e177611a8d7d97c271333.png#pic_center" alt="LSTM对比RNN"  />
+</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center">相比RNN只有一个传递状态 $h^t$ , LSTM有两个传输状态,一个 $c^t$ （cell state）， 和一个 $h^t$ (hidden state)。（RNN中的 $h^t$ 对应LSTM中的 $C^t$）</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-lstm背后的核心思想">3.3 LSTM背后的核心思想<a hidden class="anchor" aria-hidden="true" href="#33-lstm背后的核心思想">#</a></h3>
+<p>LSTM的核心思想，LSTM的关键是<strong>细胞状态</strong>(cell state)，即下图中上边的水平线。cell state像是一条传送带，它贯穿整条链，其中只发生一些小的线性作用。信息流过这条线而不改变是非常容易的。<sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup> 改变cell state需要三个门的相互配合。</p>
+<p>如下图所示：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/fd2d54bfabcdf405270271ee0f7a0e5d.png#pic_center" alt="细胞状态"  />
+
+LSTM删除或添加信息到cell state，是由被称为门的结构控制的。LSTM中有三个门，“<strong>遗忘门</strong>” “<strong>输入门</strong>” 以及“<strong>输出门</strong>”，用来保护和更新cell的状态。
+门是筛选信息的方法，由一个sigmoid网络层和一个点乘操作组成。
+如下图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/26235bbf6f9e7ac8b2574b9a92825eb5.png#pic_center" alt="门"  />
+
+sigmoid层作为激活函数，将输出控制在(0,1)区间内，Sigmoid的函数图形如下：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/928331d7b14595404aaf84fb957ca1e2.png#pic_center" alt="Sigmoid"  />
+
+可以看到，绝大多数的值都是接近0或者接近1的。利用这一个性质，<strong>0 表示不允许任何通过，1 表示允许一切通过。</strong></p>
+<h3 id="34-lstm的运行机制">3.4 LSTM的运行机制<a hidden class="anchor" aria-hidden="true" href="#34-lstm的运行机制">#</a></h3>
+<p><strong>第一步，需要决定从cell state中丢弃什么样的信息</strong>，这个由“<strong>遗忘门</strong>”的sigmoid层决定。根据输入$h_{t-1}$ 和 $x_t$，得到的输出是0和1之间的数。0 代表“完全保留这个值”，1代表“完全丢弃这个值”。</p>
+<p>回到开始的例子，原来的主语是&quot;cat&quot;，之后遇到了一个新的主语&quot;cats&quot;。这时需要把之前的&quot;cat&quot;给忘掉，以便确定接下来是要使用&quot;were&quot;，而不是&quot;was&quot;。如下图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/7717df933fb9da502d2e0f4e94a5f9ec.png#pic_center" alt="遗忘门"  />
+
+<strong>第二步，需要决定在cell state里存储什么样的信息</strong>。这一步划分为两个部分，一是称为“<strong>输入门</strong>”的sigmoid层决定哪些数据需要更新。然后，<strong>tanh层</strong>创建一个新的候选值向量$\widetilde{C}_t$,这些值能加入state中。第二部分，需要将这两个部分合并以实现对state的更新。</p>
+<p>在例子中，这里对应于把新的&quot;cats&quot;加入到&quot;cell state&quot;中，以替代需要遗忘的&quot;cat&quot;。如下图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/32c9fb60da57d7196bf0f08134185a04.png#pic_center" alt="input gate"  />
+
+在决定好需要遗忘的以及需要加入的记忆之后，就可以把旧的cell state  $C_{t-1}$更新到新的cell state $C_t$。 这一步中，把旧的state $C_{t-1}$ 与$f_t$ 相乘，<strong>遗忘先前决定遗忘的东西，之后加上新的记忆信息</strong> $i_t \ast \widetilde{C}_t$。这里为了体现对状态值的更新度是有限制的，可以把$i_t$当成一个权重。如下图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/5e5a4b74e086d31c7198dc9e4e16c237.png#pic_center" alt="更新"  />
+
+最后，需要决定输出。这个输出将会基于cell state ，这是一个过滤后的值。首先，使用“<strong>输出门</strong>”的sigmoid层决定输出cell state的哪些部分的。然后，将cell state放入tanh（将数值限制在-1到1），最后将结果与sigmoid门的输出相乘，这样就可以只输出需要的部分。如下图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/2ec535dabab209a486af091149ea8181.png#pic_center" alt="输出门"  />
+</p>
+<h3 id="35-lstm如何避免梯度下降">3.5 LSTM如何避免梯度下降<a hidden class="anchor" aria-hidden="true" href="#35-lstm如何避免梯度下降">#</a></h3>
+<p><a href="https://blog.csdn.net/qq_43226867/article/details/122267572#31_LSTM_59">上边</a>提到了RNN中的梯度下降以及梯度爆炸问题，是是因为在计算过程中使用链式法则，使用了乘积。而在LSTM中，状态是通过累加的方式来计算，$S_t = \sum_{\tau =1}^t \Delta S_{\tau}$。这样的计算，就不是复合函数的形式，它的导数也就不是乘积的形式，就不会发生梯度消失的情况。</p>
+<h2 id="四入门例子">四、入门例子<a hidden class="anchor" aria-hidden="true" href="#四入门例子">#</a></h2>
+<p>下面给出LSTM的一个入门实例-根据前9年的数据预测后3年的客流<sup id="fnref:6"><a href="#fn:6" class="footnote-ref" role="doc-noteref">6</a></sup>,感谢原作者的代码，完整的代码见<a href="https://github.com/Yonv1943/Python/blob/master/Demo_deep_learning/Demo_RNN_time_seq_predict.py">GithubYonv1943</a>。这里简单说一下这个代码实例的结果，需要了解更加详细的代码细节可以看看原作者的<a href="https://zhuanlan.zhihu.com/p/94757947">原文</a>详解。</p>
+<p>考虑有一组某机场1949年~1960年12年共144个月的客流量数据。使用这个数据中的前9年的客流量来预测后3年的客流量，再和实际的数据进行比对，可以看出LSTM的对这类具有时序关系的拟合效果。</p>
+<p>结果图：
+<img loading="lazy" src="https://img-blog.csdnimg.cn/img_convert/1467a78ee78b093d2e26e27dc20061f9.png#pic_center" alt="结果图"  title="结果图"  />
+</p>
+<ul>
+<li>数据：机场1949~1960年12年共144个月的客流量数据。数据具有三个维度[客运量，年份，月份]。其中前75%（前9年）的数据作为训练集，后25%(后3年)的数据作为测试集。</li>
+<li>纵坐标：标准化处理：变量值与平均数的差除以标准差，给出数值的相对位置。横坐标为月数。</li>
+<li>图解释：竖直黑线左边是训练集(前9年)。右边(后3年)红色的是预测数值，蓝色的是实际数值。</li>
+</ul>
+<p>可以看到在这个LSTM对这个数据集的拟合效果是比较好的，在这样的实际场景中，可以利用LSTM这样的工具来对客流量做一个预测，以便对客运高峰等情况做好预备方案。</p>
+<h2 id="五总结">五、总结<a hidden class="anchor" aria-hidden="true" href="#五总结">#</a></h2>
+<ul>
+<li>RNN的计算中存在多个偏导数连乘，导致梯度消失或梯度爆炸，难以处理长依赖的信息。</li>
+<li>LSTM通过三个选择性地保留信息，可以选择最近的信息或者很久之前的信息。</li>
+<li>LSTM更新cell state是采用了线性求和的计算，因此不会出现梯度消失问题，可以处理长期依赖的信息。</li>
+</ul>
+<h2 id="六参考资料">六、参考资料<a hidden class="anchor" aria-hidden="true" href="#六参考资料">#</a></h2>
+<section class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1" role="doc-endnote">
+<p><a href="https://zh.wikipedia.org/wiki/%E9%95%B7%E7%9F%AD%E6%9C%9F%E8%A8%98%E6%86%B6#cite_note-1">长短期记忆</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2" role="doc-endnote">
+<p><a href="https://mooc.study.163.com/course/2001280005#/info">吴恩达深度学习课程</a>&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:3" role="doc-endnote">
+<p><a href="https://zhuanlan.zhihu.com/p/30844905">一文搞懂RNN（循环神经网络）基础篇</a>&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:4" role="doc-endnote">
+<p><a href="https://ieeexplore.ieee.org/abstract/document/6795963">Long Short-Term Memory</a>&#160;<a href="#fnref:4" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:5" role="doc-endnote">
+<p><a href="http://colah.github.io/posts/2015-08-Understanding-LSTMs/">Understanding LSTM Networks</a>&#160;<a href="#fnref:5" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:6" role="doc-endnote">
+<p><a href="https://zhuanlan.zhihu.com/p/94757947">LSTM入门例子：根据前9年的数据预测后3年的客流（PyTorch实现）</a>&#160;<a href="#fnref:6" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</section>
+
+
+  </div>
+
+  <footer class="post-footer">
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2022 <a href="https://leesq01.github.io./">李上铨大王</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
