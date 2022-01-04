@@ -2,13 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://leesq01.github.io./posts/lstm/</loc>
-    <lastmod>2022-01-04T19:55:25+08:00</lastmod>
-  </url><url>
     <loc>https://leesq01.github.io./posts/</loc>
-    <lastmod>2022-01-04T19:55:25+08:00</lastmod>
+    <lastmod>2022-01-04T20:00:10+08:00</lastmod>
+  </url><url>
+    <loc>https://leesq01.github.io./posts/%E5%95%A6%E5%95%A6%E5%95%A6%E5%95%A6/</loc>
+    <lastmod>2022-01-04T20:00:10+08:00</lastmod>
   </url><url>
     <loc>https://leesq01.github.io./</loc>
+    <lastmod>2022-01-04T20:00:10+08:00</lastmod>
+  </url><url>
+    <loc>https://leesq01.github.io./posts/lstm/</loc>
     <lastmod>2022-01-04T19:55:25+08:00</lastmod>
   </url><url>
     <loc>https://leesq01.github.io./posts/%E6%9D%8E%E4%B8%8A%E9%93%A8%E5%A4%A7%E7%8E%8B/</loc>
