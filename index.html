@@ -148,26 +148,6 @@
   <footer class="entry-footer"><span title='2022-01-04 15:45:53 +0800 CST'>January 4, 2022</span></footer>
   <a class="entry-link" aria-label="post link to 你好，世界" href="https://leesq01.github.io./posts/%E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C/"></a>
 </article>
-
-<article class="post-entry"> 
-  <header class="entry-header">
-    <h2>
-    </h2>
-  </header>
-  <section class="entry-content">
-    <p>@[TOC]
-一、引言 1.1 什么是LSTM 首先看看百科的解释。 长短期记忆（英语：Long Short-Term Memory，LSTM）是一种时间循环神经网络（RNN)，论文首次发表于1997年。由于独特的设计结构，LSTM适合于处理和预测时间序列中间隔和延迟非常长的重要事件。1
-为了更好地理解长短期记忆网络 - LSTM(下文简称LSTM)，可以先了解循环神经网络-RNN(下文简称RNN)的相关知识，这里有一些相关的文章。LSTM只是RNN的一个变种，LSTM是为了解决RNN中的梯度消失的问题而提出的。
-二、循环神经网络RNN 2.1 为什么需要RNN 人的思想是有记忆延续性。比如当你在阅读这篇文章，你会根据你曾经对每个字的理解来理解这篇文章的字，而不是每次都要思考一个字在这篇文章的语境下到底如何理解（从一个字或词的多种解释来选择一个符合当下语境的解释）。
-举个例子：要识别这么一个句子: The cat, which already ate cakes, () full.2
-假设对其中的单词从左到右一个一个地处理，前面已经cat的识别结果是一个单数名词，到后边()里的内容，到底是填were 还是 was，那么就需要根据前边cat的识别结果进行判断。这就是RNN需要做的。
-使用神经网络来预测句子中下一个字的解释。传统的神经网络在模型训练好了以后，在输入层给定一个x，通过网络之后就能在输出层得到特定的y。利用这个模型可以通过训练拟合任意函数，但是只能单独的取处理一个个的输入，前一个输出和后一个输出是完全没有关系的。
-神经网络的结构如下： 但是，在理解一句话的意思的时候，一个字的意思是跟前面的字相关联的，即前面的输出和后面的输出是有关系的。所以仅仅利用这样的模型是不够的的，为了解决这个问题，有人提出了RNN。 RNN模型构造： RNN神经网络示意图： 蓝色部分的是隐藏层，RNN利用隐藏层将信息向后传递。 我们来看看RNN隐藏层里发生了什么,将上图按时间线展开3：
-   符号 意义     X 一个向量，输入层的值   S 一个向量，隐藏层的值   O 一个向量，输出层的值   U 输入层到隐藏层的权重矩阵   V 隐藏层到输出层的权重矩阵   W 隐藏层上一次的值作为这一次输入的权重    再给出一个更具体的图，给出各层元素的对应关系 现在看上去就比较清楚了，这个网络在 t 时刻接收到输入 $x_t$ 之后，隐藏层的值是 $s_t$ ，输出值是 $o_t$ 。关键一点是，$s_t$ 的值不仅仅取决于 $x_t$ ，还取决于 $s_{t-1}$ 。 我们可以用下面的公式来表示RNN的计算方法： 用公式表示如下： $$ O_t = g(V·S_t) $$...</p>
-  </section>
-  <footer class="entry-footer"></footer>
-  <a class="entry-link" aria-label="post link to " href="https://leesq01.github.io./posts/lstm/"></a>
-</article>
     </main>
     
 <footer class="footer">
